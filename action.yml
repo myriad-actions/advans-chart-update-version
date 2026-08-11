@@ -159,7 +159,7 @@ runs:
     # Always executed for uat and others 
     # Only executed after approval for prod
     # ---------------------------------------------------------
-    - name: Package and push helm chart to Amazon ECR and Advans Harbor
+    - name: Package and push helm chart to Amazon ECR
       if: ${{ inputs.env != 'prod' || (inputs.env == 'prod' && steps.approval.outputs.approval-status == 'approved') }}
       shell: bash
       working-directory: ${{ inputs.gitops_chart_repos }}/apps/${{ inputs.env }}/${{ inputs.app }}
@@ -169,9 +169,18 @@ runs:
         helm lint .
         helm package .
         helm push ./${{ inputs.app }}-${VERSION}.tgz oci://${{ steps.login-ecr.outputs.registry }}/helm
+
+    - name: Package and push helm chart to Advans Harbor
+      if: ${{ inputs.env != 'prod' || (inputs.env == 'prod' && steps.approval.outputs.approval-status == 'approved') }}
+      shell: bash
+      working-directory: ${{ inputs.gitops_chart_repos }}/apps/${{ inputs.env }}/${{ inputs.app }}
+      env:
+        VERSION: "${{ inputs.app_version }}-${{ inputs.short_sha }}"
+      run: |
+        helm lint .
+        helm package .
         helm registry login ${{ inputs.harbor_registry }} -u ${{ secrets.ADVANS_HARBOR_USER }} -p ${{ secrets.ADVANS_HARBOR_PWD }}
         helm push ./${{ inputs.app }}-${VERSION}.tgz oci://${{ inputs.harbor_registry }}/${{ inputs.app }} --insecure-skip-tls-verify
-
     # ---------------------------------------
     # Set chart version in CD release.yaml
     # Always executed for uat and others 
