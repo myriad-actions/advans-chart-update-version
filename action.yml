@@ -28,9 +28,6 @@ inputs:
   gitops_chart_repos:
     description: "Github helm repos repository"
     required: true
-  gitops_cd_repos:
-    description: "Github CD repository"
-    required: true
   organisation_repos:
     description: "Github Organization"
     required: true
@@ -76,20 +73,10 @@ runs:
     # Checkout the GitOps Helm chart repository
     # ------------------------------
     - name: Checkout GitOps repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v7
       with:
         repository: "${{ inputs.organisation_repos }}/${{ inputs.gitops_chart_repos }}"
         path: "${{ inputs.gitops_chart_repos }}"
-        token: "${{ inputs.gh_pat }}"
-
-    # ------------------------------
-    # Checkout the CD repository (release manifests)
-    # ------------------------------
-    - name: Checkout CD repository
-      uses: actions/checkout@v7
-      with:
-        repository: "${{ inputs.organisation_repos }}/${{ inputs.gitops_cd_repos }}"
-        path: "${{ inputs.gitops_cd_repos }}"
         token: "${{ inputs.gh_pat }}"
 
     # ------------------------------
