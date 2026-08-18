@@ -216,3 +216,18 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+.idea
+.DS_Store
+*.iml
+.project
+.classpath
+.history
+.settings
+.deploy
+venv
+charts/**/charts
+.cr-*
+/ct_*
+*.jar
