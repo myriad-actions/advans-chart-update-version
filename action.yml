@@ -85,7 +85,6 @@ runs:
     # Only executed after approval for prod
     # ------------------------------
     - name: Update App's version in Chart.yaml
-      if: ${{ inputs.env != 'prod' || (inputs.env == 'prod' && steps.approval.outputs.approval-status == 'approved') }}
       shell: bash
       working-directory: ${{ inputs.gitops_chart_repos }}/apps/${{ inputs.env }}/${{ inputs.app }}
       env:
@@ -100,7 +99,6 @@ runs:
     # Only executed after approval for prod
     # ------------------------------
     - name: Package and push helm chart to Amazon ECR
-      if: ${{ inputs.env != 'prod' || (inputs.env == 'prod' && steps.approval.outputs.approval-status == 'approved') }}
       shell: bash
       working-directory: ${{ inputs.gitops_chart_repos }}/apps/${{ inputs.env }}/${{ inputs.app }}
       env:
