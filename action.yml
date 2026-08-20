@@ -31,6 +31,10 @@ inputs:
   gitops_cd_repos:
     description: "Github CD repository"
     required: true
+  github_path:
+    description: 'The AWS region to use.'
+    required: false
+    default: 'main'
   organisation_repos:
     description: "Github Organization"
     required: true
@@ -91,6 +95,7 @@ runs:
         repository: "${{ inputs.organisation_repos }}/${{ inputs.gitops_cd_repos }}"
         path: "${{ inputs.gitops_cd_repos }}"
         token: "${{ inputs.gh_pat }}"
+        ref: "${{ inputs.github_branch }}"
 
     # ------------------------------
     # Update application's Chart.yaml
