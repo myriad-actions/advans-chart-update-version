@@ -31,7 +31,7 @@ inputs:
   gitops_cd_repos:
     description: "Github CD repository"
     required: true
-  github_path:
+  github_branch:
     description: 'The AWS region to use.'
     required: false
     default: 'main'
