@@ -28,6 +28,9 @@ inputs:
   gitops_chart_repos:
     description: "Github helm repos repository"
     required: true
+  gitops_cd_repos:
+    description: "Github CD repository"
+    required: true
   organisation_repos:
     description: "Github Organization"
     required: true
@@ -63,7 +66,7 @@ runs:
     # Checkout the App repo
     # ------------------------------
     - name: Checkout GitOps repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v7
       with:
         repository: "${{ inputs.organisation_repos }}/${{ inputs.app }}"
         path: "${{ inputs.app }}"
@@ -77,6 +80,16 @@ runs:
       with:
         repository: "${{ inputs.organisation_repos }}/${{ inputs.gitops_chart_repos }}"
         path: "${{ inputs.gitops_chart_repos }}"
+        token: "${{ inputs.gh_pat }}"
+        
+    # ------------------------------
+    # Checkout the CD repository (release manifests)
+    # ------------------------------
+    - name: Checkout CD repository
+      uses: actions/checkout@v7
+      with:
+        repository: "${{ inputs.organisation_repos }}/${{ inputs.gitops_cd_repos }}"
+        path: "${{ inputs.gitops_cd_repos }}"
         token: "${{ inputs.gh_pat }}"
 
     # ------------------------------
@@ -107,3 +120,41 @@ runs:
         helm lint .
         helm package .
         helm push ./${{ inputs.app }}-${VERSION}.tgz oci://${{ steps.login-ecr.outputs.registry }}/helm
+    # ------------------------------
+    # Set chart version in CD release.yaml
+    # Always executed for demo and others 
+    # Only executed after approval for prod
+    # ------------------------------
+    - name: Set chart version
+      uses: mikefarah/yq@v4
+      with:
+        cmd: yq -i '.spec.chart.spec.version = strenv(VERSION)' '${{ inputs.gitops_cd_repos }}/apps/${{ inputs.env }}/${{ inputs.app }}/release.yaml'
+      env:
+        VERSION: "${{ inputs.app_version }}-${{ inputs.short_sha }}"
+      
+    # ------------------------------
+    # Set chart version in CD release.yaml
+    # Always executed for demo and others 
+    # Only executed after approval for prod
+    # ------------------------------    
+    - name: Update Chart.yaml in CD repository and push changes
+      shell: bash
+      working-directory: ${{ inputs.gitops_cd_repos }}/apps/${{ inputs.env }}/${{ inputs.app }}
+      env:
+        CI_COMMIT_MESSAGE: "Update App Version to"
+        CI_COMMIT_AUTHOR: "Continuous Deployment"
+        VERSION: "${{ inputs.app_version }}-${{ inputs.short_sha }}"
+        APP: "${{ inputs.app }}"
+      run: |
+        git config --global user.name "${CI_COMMIT_AUTHOR}"
+        git config --global user.email "hub-devops@myriadgroup.com"
+        git add release.yaml
+
+        # Commit only if there is staged change
+        if git diff --cached --quiet; then
+          echo "No changes detected in release.yaml | skipping commit."
+        else
+          git commit -m "${CI_COMMIT_MESSAGE} ${VERSION} in release.yaml for ${APP}"
+          git push origin HEAD
+          echo "release.yaml updated and pushed with version ${VERSION}."
+        fi 
